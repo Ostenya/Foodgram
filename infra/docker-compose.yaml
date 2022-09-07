@@ -1,0 +1,70 @@
+version: '3.3'
+services:
+
+  db:
+    image: postgres:13.0-alpine
+    volumes:
+      - data_value:/var/lib/postgresql/data/
+    env_file:
+      - ./.env
+
+  backend:
+    # build: ../backend/
+    image: ostenya/foodgram_backend:2.1
+    restart: always
+    volumes:
+      - static_value:/app/back_static/
+      - media_value:/app/media/
+    depends_on:
+      - db
+    env_file:
+      - ./.env
+
+  backend-prepare:
+    image: ostenya/foodgram_backend:2.1
+    volumes:
+      - static_value:/app/back_static/
+      - media_value:/app/media/
+    depends_on:
+      - backend
+    env_file:
+      - ./.env
+    command:
+      - pre-run
+
+  backend-migrate:
+    image: ostenya/foodgram_backend:2.1
+    volumes:
+      - static_value:/app/back_static/
+      - media_value:/app/media/
+    depends_on:
+      - backend
+    env_file:
+      - ./.env
+    command:
+      - migrate
+
+  frontend:
+    image: ostenya/foodgram_frontend:v_yandex_practicum
+    volumes:
+      - ../frontend/:/app/result_build/
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:1.19.3
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ../frontend/build:/usr/share/nginx/html/
+      - ../docs/:/usr/share/nginx/html/api/docs/
+      - static_value:/var/html/back_static/
+      - media_value:/var/html/media/
+    depends_on:
+      - backend
+
+volumes:
+  data_value:
+  static_value:
+  media_value:
